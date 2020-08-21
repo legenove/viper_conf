@@ -14,7 +14,8 @@ file: /data/conf/debug/test.json
 
 ```golang
 
-// it will search config in /data/conf/debug first. if not found , it will search config in /data/conf/
+// it will search config in /data/conf/debug first. 
+// if not found , it will search config in /data/conf/
 var Conf = NewConf("debug", "/data/conf")
 
 abc := &AbcStruct{}
