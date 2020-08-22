@@ -16,18 +16,18 @@ type AbcStruct struct {
 
 const TestConfigPath = "./config"
 
-var _conf = NewConf("", TestConfigPath)
+var Tconf = NewConf("", TestConfigPath)
 
 func init() {
 	abc := &AbcStruct{}
-	_conf.Instance("test.json", abc, nil, nil)
+	Tconf.Instance("test.json", abc, nil, nil)
 }
 
 func TestNewConf_FileChange(t *testing.T) {
 	filePath := path.Join(TestConfigPath, "test.json")
 	backupPath := path.Join(TestConfigPath, "test_backup.json")
 	updatePath := path.Join(TestConfigPath, "test_update.json")
-	v, ok := _conf.GetViperConf("test.json")
+	v, ok := Tconf.GetViperConf("test.json")
 	assert.Equal(t, true, ok)
 	if !ok {
 		return
@@ -66,7 +66,7 @@ func TestNewConf_FileChange(t *testing.T) {
 }
 
 func TestNewConf(t *testing.T) {
-	v, ok := _conf.GetViperConf("test.json")
+	v, ok := Tconf.GetViperConf("test.json")
 	if ok {
 		fmt.Println(v.Get("abc"))
 	} else {
@@ -100,7 +100,7 @@ func scheduleDeleteAndCreateFile(filePath, backupPath string) {
 }
 
 func BenchmarkNewConf_GetValue(b *testing.B) {
-	v, _ := _conf.GetViperConf("test.json")
+	v, _ := Tconf.GetViperConf("test.json")
 	filePath := path.Join(TestConfigPath, "test.json")
 	backupPath := path.Join(TestConfigPath, "test_backup.json")
 	scheduleDeleteAndCreateFile(filePath, backupPath)
@@ -112,7 +112,7 @@ func BenchmarkNewConf_GetValue(b *testing.B) {
 }
 
 func BenchmarkNewConf_GetConf(b *testing.B) {
-	v, _ := _conf.GetViperConf("test.json")
+	v, _ := Tconf.GetViperConf("test.json")
 	filePath := path.Join(TestConfigPath, "test.json")
 	backupPath := path.Join(TestConfigPath, "test_backup.json")
 	scheduleDeleteAndCreateFile(filePath, backupPath)

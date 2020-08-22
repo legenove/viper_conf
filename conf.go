@@ -4,11 +4,16 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/legenove/utils"
 	"github.com/legenove/viper"
+	"github.com/legenove/viper_conf/parsers"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 )
+
+func init() {
+	viper.AddParser(&parsers.XMLParser{}, "xml")
+}
 
 type conf struct {
 	Env         string
@@ -50,7 +55,9 @@ func (c *conf) Instance(fileName string, val interface{},
 	onChangeFunc func(*ViperConf), onRemoveFunc func(*ViperConf)) (*ViperConf, error) {
 	c.Lock()
 	defer c.Unlock()
-	v, ok := c.Val[fileName]
+	var v *ViperConf
+	var ok bool
+	v, ok = c.Val[fileName]
 	if ok {
 		return v, nil
 	}

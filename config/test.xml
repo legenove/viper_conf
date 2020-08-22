@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <a>a</a>
+    <b>b</b>
+    <c>c</c>
+    <d dd="dd" dd2="dd2"/>
+</root>
