@@ -11,7 +11,7 @@ import (
 )
 
 type AbcStruct struct {
-	Abc string `json:"abc"`
+	Abc string `json:"abc" mapstructure:"abc"`
 }
 
 const TestConfigPath = "./config"

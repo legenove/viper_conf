@@ -1,5 +1,5 @@
 # viper_conf
-
+基于
 
 ## easy use viper
 
@@ -25,9 +25,9 @@ var Conf = NewConf("debug", "/data/conf")
 
 used file : instance viper
 ```golang
-
+// should use tag:mapstructure to Marshal
 type AbcStruct struct {
-	Abc string `json:"abc"`
+	Abc string `json:"abc" mapstructure:"abc"`
 }
 
 
