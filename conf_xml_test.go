@@ -1,12 +1,9 @@
 package viper_conf
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/legenove/viper"
 	"github.com/legenove/viper_conf/parsers"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
