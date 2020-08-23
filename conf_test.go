@@ -75,13 +75,13 @@ func TestNewConf(t *testing.T) {
 	fmt.Println(v.GetValue().(*AbcStruct))
 	go func() {
 		for i := 0; i < 10; i++ {
-			time.Sleep(9 * time.Second)
+			time.Sleep(1 * time.Second)
 			fmt.Println("times:", i)
 			fmt.Println("value", v.GetValue())
 			fmt.Println("conf", v.GetConf())
 		}
 	}()
-	time.Sleep(100 * time.Second)
+	time.Sleep(11 * time.Second)
 }
 
 func copyFile(src, dst string) {
