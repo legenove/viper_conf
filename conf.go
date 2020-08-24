@@ -15,7 +15,7 @@ func init() {
 	viper.AddParser(&parsers.XMLParser{}, "xml")
 }
 
-type conf struct {
+type FileConf struct {
 	Env         string
 	Path        string
 	DefaultPath string
@@ -23,13 +23,13 @@ type conf struct {
 	sync.RWMutex
 }
 
-func NewConf(env string, defaultPath string) *conf {
+func NewConf(env string, defaultPath string) *FileConf {
 	path := defaultPath
 	if env != "" {
 		path = filepath.Join(defaultPath, env)
 	}
 	utils.CreateDir(path)
-	return &conf{
+	return &FileConf{
 		Env:         env,
 		Path:        path,
 		DefaultPath: defaultPath,
@@ -37,21 +37,21 @@ func NewConf(env string, defaultPath string) *conf {
 	}
 }
 
-func (c *conf) RegisterViperConf(viperConf *ViperConf) {
+func (c *FileConf) RegisterViperConf(viperConf *ViperConf) {
 	viperConf.setBaseConf(c)
 	c.Lock()
 	defer c.Unlock()
 	c.Val[viperConf.GetName()] = viperConf
 }
 
-func (c *conf) GetViperConf(filename string) (*ViperConf, bool) {
+func (c *FileConf) GetViperConf(filename string) (*ViperConf, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	v, ok := c.Val[filename]
 	return v, ok
 }
 
-func (c *conf) Instance(fileName string, val interface{},
+func (c *FileConf) Instance(fileName string, val interface{},
 	onChangeFunc func(*ViperConf), onRemoveFunc func(*ViperConf)) (*ViperConf, error) {
 	c.Lock()
 	defer c.Unlock()
@@ -82,7 +82,7 @@ func (c *conf) Instance(fileName string, val interface{},
 
 // 必须需要注册到基础配置才能进行读取配置
 type ViperConf struct {
-	BaseConf     *conf            // 全局配置
+	BaseConf     *FileConf        // 全局配置
 	ConfLock     sync.Mutex       // 锁
 	ValLock      sync.Mutex       // 锁
 	LoadLock     sync.Mutex       // 锁
@@ -115,7 +115,7 @@ func (vc *ViperConf) GetConfType() string {
 	return names[len(names)-1]
 }
 
-func (vc *ViperConf) setBaseConf(conf2 *conf) {
+func (vc *ViperConf) setBaseConf(conf2 *FileConf) {
 	vc.BaseConf = conf2
 }
 
@@ -305,7 +305,7 @@ func (cb *ViperConf) GetSizeInBytes(key string) (uint, error) {
 	return conf.GetSizeInBytes(key), nil
 }
 
-func parseConf(c *conf, name, confType string, changeFunc func(*ViperConf), onRemoveFunc func(*ViperConf)) (*viper.Viper, error) {
+func parseConf(c *FileConf, name, confType string, changeFunc func(*ViperConf), onRemoveFunc func(*ViperConf)) (*viper.Viper, error) {
 	x := viper.New()
 	x.SetConfigName(name)
 	x.SetConfigType(confType)
@@ -332,7 +332,7 @@ func parseConf(c *conf, name, confType string, changeFunc func(*ViperConf), onRe
 	return x, nil
 }
 
-func confChangePool(key string, c *conf) {
+func confChangePool(key string, c *FileConf) {
 	v, ok := c.Val[key]
 	if !ok {
 		return
@@ -342,7 +342,7 @@ func confChangePool(key string, c *conf) {
 	}
 }
 
-func confRemovePool(key string, c *conf) {
+func confRemovePool(key string, c *FileConf) {
 	v, ok := c.Val[key]
 	if !ok {
 		return

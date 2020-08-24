@@ -78,7 +78,7 @@ func TestNewConf(t *testing.T) {
 			time.Sleep(1 * time.Second)
 			fmt.Println("times:", i)
 			fmt.Println("value", v.GetValue())
-			fmt.Println("conf", v.GetConf())
+			fmt.Println("FileConf", v.GetConf())
 		}
 	}()
 	time.Sleep(11 * time.Second)
