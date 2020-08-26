@@ -369,20 +369,11 @@ func DefaultOnChangeFunc(v *ViperConf) {
 	}
 	go func() {
 		// 防止无人使用 onchange channel
-		select {
-		case <-time.After(1 * time.Millisecond):
-			isBreak := false
-			for i := 0; i < len(v.OnChange); i++ {
-				select {
-				case <-time.After(1 * time.Millisecond):
-					isBreak = true
-				case <-v.OnChange:
-				}
-				if isBreak {
-					break
-				}
+		if len(v.OnChange) == 0 {
+			select {
+			case v.OnChange <- struct{}{}:
+			case <- time.After(time.Millisecond):
 			}
-		case v.OnChange <- struct{}{}:
 		}
 	}()
 }
