@@ -89,6 +89,7 @@ type ViperConf struct {
 	FileName     string           // 文件名
 	HasVal       bool             // 是否有值
 	Val          interface{}      // 配置的值
+	OnChange     chan struct{}    // 变更通知
 	OnChangeFunc func(*ViperConf) // 改变 func
 	OnRemoveFunc func(*ViperConf) // 删除 func
 	readingViper bool             // 是否正在读配置
@@ -99,6 +100,7 @@ type ViperConf struct {
 
 func NewViperConfig(fileName string) *ViperConf {
 	return &ViperConf{
+		OnChange:     make(chan struct{}, 8),
 		FileName:     fileName,
 		OnChangeFunc: DefaultOnChangeFunc,
 		OnRemoveFunc: DefaultOnRemoveFunc,
@@ -365,6 +367,24 @@ func DefaultOnChangeFunc(v *ViperConf) {
 		}
 		v.HasVal = true
 	}
+	go func() {
+		// 防止无人使用 onchange channel
+		select {
+		case <-time.After(1 * time.Millisecond):
+			isBreak := false
+			for i := 0; i < len(v.OnChange); i++ {
+				select {
+				case <-time.After(1 * time.Millisecond):
+					isBreak = true
+				case <-v.OnChange:
+				}
+				if isBreak {
+					break
+				}
+			}
+		case v.OnChange <- struct{}{}:
+		}
+	}()
 }
 
 func DefaultOnRemoveFunc(v *ViperConf) {

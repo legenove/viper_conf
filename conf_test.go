@@ -17,10 +17,10 @@ type AbcStruct struct {
 const TestConfigPath = "./config"
 
 var Tconf = NewConf("", TestConfigPath)
-
+var ABC *AbcStruct
 func init() {
-	abc := &AbcStruct{}
-	Tconf.Instance("test.json", abc, nil, nil)
+	ABC = &AbcStruct{}
+	Tconf.Instance("test.json", ABC, nil, nil)
 }
 
 func TestNewConf_FileChange(t *testing.T) {
@@ -77,7 +77,8 @@ func TestNewConf(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			time.Sleep(1 * time.Second)
 			fmt.Println("times:", i)
-			fmt.Println("value", v.GetValue())
+			fmt.Println("value", v.GetValue(), ABC)
+			fmt.Printf("value point, %p, %p \n", v.GetValue(), ABC)
 			fmt.Println("FileConf", v.GetConf())
 		}
 	}()
