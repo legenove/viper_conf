@@ -32,11 +32,22 @@ type AbcStruct struct {
 
 
 abc := &AbcStruct{}
-viperConf, _ := core.Conf.Instance("test.json", abc, nil, nil)
+viperConf, _ := core.Conf.Instance("test.json", abc)
 
 // get value struct
 viperConf.GetValue().(*AbcStruct)
 
 // get value like use viper .
 viperConf.GetString("abc")
+```
+
+you can define self onchangefunc
+
+```golang
+func MyOnchangeFunc(v *viper_conf.ViperConf) {
+    // you method
+}
+
+viperConf, _ := core.Conf.Instance("test.json", abc, viper_conf.OptOnChangeFunc(MyOnchangeFunc))
+
 ```

@@ -20,7 +20,7 @@ var Tconf = NewConf("", TestConfigPath)
 var ABC *AbcStruct
 func init() {
 	ABC = &AbcStruct{}
-	Tconf.Instance("test.json", ABC, nil, nil)
+	Tconf.Instance("test.json", ABC)
 }
 
 func TestNewConf_FileChange(t *testing.T) {

@@ -11,7 +11,7 @@ var xmlTest *ViperConf
 var err error
 func init() {
 	viper.AddParser(&parsers.XMLParser{}, "xml")
-	xmlTest, err = Tconf.Instance("test.xml", nil, nil, nil)
+	xmlTest, err = Tconf.Instance("test.xml", nil)
 }
 
 func TestXMLGetValue(t *testing.T) {

@@ -51,8 +51,7 @@ func (c *FileConf) GetViperConf(filename string) (*ViperConf, bool) {
 	return v, ok
 }
 
-func (c *FileConf) Instance(fileName string, val interface{},
-	onChangeFunc func(*ViperConf), onRemoveFunc func(*ViperConf)) (*ViperConf, error) {
+func (c *FileConf) Instance(fileName string, val interface{}, opts ...VCOptionFunc) (*ViperConf, error) {
 	c.Lock()
 	defer c.Unlock()
 	var v *ViperConf
@@ -62,13 +61,13 @@ func (c *FileConf) Instance(fileName string, val interface{},
 		return v, nil
 	}
 	v = NewViperConfig(fileName)
-	if onChangeFunc != nil {
-		v.SetOnChangeFunc(onChangeFunc)
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		opt(v)
 	}
-	if onRemoveFunc != nil {
-		v.SetOnRemoveFunc(onRemoveFunc)
-	}
-	x, err := parseConf(c, v.GetName(), v.GetConfType(), onChangeFunc, onRemoveFunc)
+	x, err := parseConf(c, v.GetName(), v.GetConfType(), v.OnChangeFunc, v.OnRemoveFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +77,20 @@ func (c *FileConf) Instance(fileName string, val interface{},
 	v.setBaseConf(c)
 	c.Val[fileName] = v
 	return v, nil
+}
+
+type VCOptionFunc func(v *ViperConf)
+
+func OptOnChangeFunc(f func(*ViperConf)) VCOptionFunc {
+	return func(v *ViperConf) {
+		v.OnChangeFunc = f
+	}
+}
+
+func OptOnRemoveFunc(f func(*ViperConf)) VCOptionFunc {
+	return func(v *ViperConf) {
+		v.OnRemoveFunc = f
+	}
 }
 
 // 必须需要注册到基础配置才能进行读取配置
@@ -372,7 +385,7 @@ func DefaultOnChangeFunc(v *ViperConf) {
 		if len(v.OnChange) == 0 {
 			select {
 			case v.OnChange <- struct{}{}:
-			case <- time.After(time.Millisecond):
+			case <-time.After(time.Millisecond):
 			}
 		}
 	}()
