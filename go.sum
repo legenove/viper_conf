@@ -86,12 +86,6 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/legenove/utils v0.0.0-20200724081548-f533644e1822 h1:cYWTuS1sLWT5qUDOtQ49hHHrrilfElGRRxCdgNxMeKs=
-github.com/legenove/utils v0.0.0-20200724081548-f533644e1822/go.mod h1:LU8q6GHxhwMIOe1AEPSASOIEoFla2d7ejICp8bVYuqs=
-github.com/legenove/viper v1.7.3 h1:HbC2IZrCbH3bywlgPWt5nrd0ZLULuy3OO85S0SVGhdg=
-github.com/legenove/viper v1.7.3/go.mod h1:Tko7Ji8Hp65dh0tLFY1MRG128qafDK41lscVMdB9ubg=
-github.com/legenove/viper v1.7.4 h1:nAsO9NUxqkEPie7ORKC6iJiife7XKO60JkbmSK0+ZcU=
-github.com/legenove/viper v1.7.4/go.mod h1:Tko7Ji8Hp65dh0tLFY1MRG128qafDK41lscVMdB9ubg=
 github.com/legenove/viper v1.7.5 h1:weElNDgZ+7RUZcXrWeFoLn/q0UnLuC0VxViRw7X5DKc=
 github.com/legenove/viper v1.7.5/go.mod h1:Tko7Ji8Hp65dh0tLFY1MRG128qafDK41lscVMdB9ubg=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
@@ -205,8 +199,6 @@ golang.org/x/sys v0.0.0-20190624142023-c5567b49c5d0/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20191005200804-aed5e4c7ecf9/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 h1:LfCXLvNmTYH9kEmVgqbnsWfruoXZIrh4YBgqVHtDvw0=
 golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20200820212457-1fb795427249 h1:tKP05IMsVLZ4VeeCEFmrIUmxAAx6UD8IBdPtYlYNa8g=
-golang.org/x/sys v0.0.0-20200820212457-1fb795427249/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200821140526-fda516888d29 h1:mNuhGagCf3lDDm5C0376C/sxh6V7fy9WbdEu/YDNA04=
 golang.org/x/sys v0.0.0-20200821140526-fda516888d29/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

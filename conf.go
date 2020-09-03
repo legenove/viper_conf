@@ -2,7 +2,6 @@ package viper_conf
 
 import (
 	"github.com/fsnotify/fsnotify"
-	"github.com/legenove/utils"
 	"github.com/legenove/viper"
 	"github.com/legenove/viper_conf/parsers"
 	"path/filepath"
@@ -28,7 +27,7 @@ func NewConf(env string, defaultPath string) *FileConf {
 	if env != "" {
 		path = filepath.Join(defaultPath, env)
 	}
-	utils.CreateDir(path)
+	createDir(path)
 	return &FileConf{
 		Env:         env,
 		Path:        path,
@@ -403,5 +402,5 @@ func DefaultOnRemoveFunc(v *ViperConf) {
 }
 
 func getFileName(name, confType string) string {
-	return utils.ConcatenateStrings(name, ".", confType)
+	return concatenateStrings(name, ".", confType)
 }
