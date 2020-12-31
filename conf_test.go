@@ -2,12 +2,13 @@ package viper_conf
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"os/exec"
 	"path"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type AbcStruct struct {
@@ -18,9 +19,10 @@ const TestConfigPath = "./config"
 
 var Tconf = NewConf("", TestConfigPath)
 var ABC *AbcStruct
+
 func init() {
 	ABC = &AbcStruct{}
-	Tconf.Instance("test.json", ABC)
+	Tconf.Instance("test.json", "", ABC)
 }
 
 func TestNewConf_FileChange(t *testing.T) {
@@ -32,7 +34,7 @@ func TestNewConf_FileChange(t *testing.T) {
 	if !ok {
 		return
 	}
-	s , err := v.GetString("abc")
+	s, err := v.GetString("abc")
 	if err != nil {
 		t.Error(err)
 		return
@@ -40,7 +42,7 @@ func TestNewConf_FileChange(t *testing.T) {
 	assert.Equal(t, "abc", s)
 	// change file
 	copyFile(updatePath, filePath)
-	s , err = v.GetString("abc")
+	s, err = v.GetString("abc")
 	if err != nil {
 		t.Error(err)
 		return
@@ -48,7 +50,7 @@ func TestNewConf_FileChange(t *testing.T) {
 	assert.Equal(t, "bcd", s)
 	// delete file
 	os.Remove(filePath)
-	s , err = v.GetString("abc")
+	s, err = v.GetString("abc")
 	if err != nil {
 		t.Error(err)
 		return
@@ -56,7 +58,7 @@ func TestNewConf_FileChange(t *testing.T) {
 	assert.Equal(t, "bcd", s)
 	copyFile(backupPath, filePath)
 	// recover first file
-	s , err = v.GetString("abc")
+	s, err = v.GetString("abc")
 	if err != nil {
 		t.Error(err)
 		return

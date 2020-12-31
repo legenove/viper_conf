@@ -1,13 +1,15 @@
 package viper_conf
 
 import (
-	"github.com/fsnotify/fsnotify"
-	"github.com/legenove/viper"
-	"github.com/legenove/viper_conf/parsers"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/legenove/easyconfig/ifacer"
+	"github.com/legenove/viper"
+	"github.com/legenove/viper_conf/parsers"
 )
 
 func init() {
@@ -50,7 +52,7 @@ func (c *FileConf) GetViperConf(filename string) (*ViperConf, bool) {
 	return v, ok
 }
 
-func (c *FileConf) Instance(fileName string, val interface{}, opts ...VCOptionFunc) (*ViperConf, error) {
+func (c *FileConf) Instance(fileName, _type string, val interface{}, opts ...ifacer.OptionFunc) (ifacer.Configer, error) {
 	c.Lock()
 	defer c.Unlock()
 	var v *ViperConf
@@ -60,6 +62,7 @@ func (c *FileConf) Instance(fileName string, val interface{}, opts ...VCOptionFu
 		return v, nil
 	}
 	v = NewViperConfig(fileName)
+	v.SetConfType(_type)
 	for _, opt := range opts {
 		if opt == nil {
 			continue
@@ -78,35 +81,22 @@ func (c *FileConf) Instance(fileName string, val interface{}, opts ...VCOptionFu
 	return v, nil
 }
 
-type VCOptionFunc func(v *ViperConf)
-
-func OptOnChangeFunc(f func(*ViperConf)) VCOptionFunc {
-	return func(v *ViperConf) {
-		v.OnChangeFunc = f
-	}
-}
-
-func OptOnRemoveFunc(f func(*ViperConf)) VCOptionFunc {
-	return func(v *ViperConf) {
-		v.OnRemoveFunc = f
-	}
-}
-
 // 必须需要注册到基础配置才能进行读取配置
 type ViperConf struct {
-	BaseConf     *FileConf        // 全局配置
-	ConfLock     sync.Mutex       // 锁
-	ValLock      sync.Mutex       // 锁
-	LoadLock     sync.Mutex       // 锁
-	FileName     string           // 文件名
-	HasVal       bool             // 是否有值
-	Val          interface{}      // 配置的值
-	OnChange     chan struct{}    // 变更通知
-	OnChangeFunc func(*ViperConf) // 改变 func
-	OnRemoveFunc func(*ViperConf) // 删除 func
-	readingViper bool             // 是否正在读配置
-	HasViper     bool             // 是否有配置
-	Conf         *viper.Viper     // 配置对象
+	BaseConf     *FileConf         // 全局配置
+	ConfLock     sync.Mutex        // 锁
+	ValLock      sync.Mutex        // 锁
+	LoadLock     sync.Mutex        // 锁
+	FileName     string            // 文件名
+	Type         string            // 文件类型
+	HasVal       bool              // 是否有值
+	Val          interface{}       // 配置的值
+	OnChange     chan struct{}     // 变更通知
+	OnChangeFunc ifacer.ChangeFunc // 改变 func
+	OnRemoveFunc ifacer.ChangeFunc // 删除 func
+	readingViper bool              // 是否正在读配置
+	HasViper     bool              // 是否有配置
+	Conf         *viper.Viper      // 配置对象
 	Error        error
 }
 
@@ -124,9 +114,20 @@ func (vc *ViperConf) GetName() string {
 	return strings.Join(names[:len(names)-1], ".")
 }
 
+func (vc *ViperConf) GetFullName() string {
+	return vc.FileName
+}
+
 func (vc *ViperConf) GetConfType() string {
-	names := strings.Split(vc.FileName, ".")
-	return names[len(names)-1]
+	if len(vc.Type) == 0 {
+		names := strings.Split(vc.FileName, ".")
+		vc.Type = names[len(names)-1]
+	}
+	return vc.Type
+}
+
+func (vc *ViperConf) SetConfType(t string) {
+	vc.Type = t
 }
 
 func (vc *ViperConf) setBaseConf(conf2 *FileConf) {
@@ -138,11 +139,11 @@ func (vc *ViperConf) SetValue(val interface{}) *ViperConf {
 	return vc
 }
 
-func (vc *ViperConf) SetOnChangeFunc(onChangeFunc func(*ViperConf)) {
+func (vc *ViperConf) SetOnChangeFunc(onChangeFunc ifacer.ChangeFunc) {
 	vc.OnChangeFunc = onChangeFunc
 }
 
-func (vc *ViperConf) SetOnRemoveFunc(onRemoveFunc func(*ViperConf)) {
+func (vc *ViperConf) SetOnRemoveFunc(onRemoveFunc ifacer.ChangeFunc) {
 	vc.OnRemoveFunc = onRemoveFunc
 }
 
@@ -162,6 +163,22 @@ func (vc *ViperConf) preseConf() {
 		vc.HasViper = true
 		vc.Conf = x
 	}
+}
+
+func (vc *ViperConf) UnmarshalKey(key string, rawVal interface{}) error {
+	conf := vc.GetConf()
+	if conf == nil {
+		return vc.Error
+	}
+	return conf.UnmarshalKey(key, rawVal)
+}
+
+func (vc *ViperConf) Unmarshal(rawVal interface{}) error {
+	conf := vc.GetConf()
+	if conf == nil {
+		return vc.Error
+	}
+	return conf.Unmarshal(rawVal)
 }
 
 func (vc *ViperConf) GetConf() *viper.Viper {
@@ -194,132 +211,142 @@ func (vc *ViperConf) GetValue() interface{} {
 	return vc.Val
 }
 
-func (cb *ViperConf) Get(key string) (interface{}, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) Get(key string) (interface{}, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return "", cb.Error
+		return "", vc.Error
 	}
 	return conf.Get(key), nil
 }
 
-func (cb *ViperConf) GetString(key string) (string, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetString(key string) (string, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return "", cb.Error
+		return "", vc.Error
 	}
 	return conf.GetString(key), nil
 }
 
 // GetBool returns the value associated with the key as a boolean.
-func (cb *ViperConf) GetBool(key string) (bool, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetBool(key string) (bool, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return false, cb.Error
+		return false, vc.Error
 	}
 	return conf.GetBool(key), nil
 }
 
 // GetInt returns the value associated with the key as an integer.
-func (cb *ViperConf) GetInt(key string) (int, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetInt(key string) (int, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return 0, cb.Error
+		return 0, vc.Error
 	}
 	return conf.GetInt(key), nil
 }
 
 // GetInt32 returns the value associated with the key as an integer.
-func (cb *ViperConf) GetInt32(key string) (int32, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetInt32(key string) (int32, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return 0, cb.Error
+		return 0, vc.Error
 	}
 	return conf.GetInt32(key), nil
 }
 
 // GetInt64 returns the value associated with the key as an integer.
-func (cb *ViperConf) GetInt64(key string) (int64, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetInt64(key string) (int64, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return 0, cb.Error
+		return 0, vc.Error
 	}
 	return conf.GetInt64(key), nil
 }
 
 // GetFloat64 returns the value associated with the key as a float64.
-func (cb *ViperConf) GetFloat64(key string) (float64, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetFloat64(key string) (float64, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return 0, cb.Error
+		return 0, vc.Error
 	}
 	return conf.GetFloat64(key), nil
 }
 
 // GetTime returns the value associated with the key as time.
-func (cb *ViperConf) GetTime(key string) (time.Time, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetTime(key string) (time.Time, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return time.Time{}, cb.Error
+		return time.Time{}, vc.Error
 	}
 	return conf.GetTime(key), nil
 }
 
 // GetDuration returns the value associated with the key as a duration.
-func (cb *ViperConf) GetDuration(key string) (time.Duration, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetDuration(key string) (time.Duration, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return 0, cb.Error
+		return 0, vc.Error
 	}
 	return conf.GetDuration(key), nil
 }
 
 // GetStringSlice returns the value associated with the key as a slice of strings.
-func (cb *ViperConf) GetStringSlice(key string) ([]string, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetStringSlice(key string) ([]string, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return nil, cb.Error
+		return nil, vc.Error
 	}
 	return conf.GetStringSlice(key), nil
 }
 
 // GetStringMap returns the value associated with the key as a map of interfaces.
-func (cb *ViperConf) GetStringMap(key string) (map[string]interface{}, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetStringMap(key string) (map[string]interface{}, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return nil, cb.Error
+		return nil, vc.Error
 	}
 	return conf.GetStringMap(key), nil
 }
 
 // GetStringMapString returns the value associated with the key as a map of strings.
-func (cb *ViperConf) GetStringMapString(key string) (map[string]string, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetStringMapString(key string) (map[string]string, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return nil, cb.Error
+		return nil, vc.Error
 	}
 	return conf.GetStringMapString(key), nil
 }
 
 // GetStringMapStringSlice returns the value associated with the key as a map to a slice of strings.
-func (cb *ViperConf) GetStringMapStringSlice(key string) (map[string][]string, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetStringMapStringSlice(key string) (map[string][]string, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return nil, cb.Error
+		return nil, vc.Error
 	}
 	return conf.GetStringMapStringSlice(key), nil
 }
 
 // GetSizeInBytes returns the size of the value associated with the given key
 // in bytes.
-func (cb *ViperConf) GetSizeInBytes(key string) (uint, error) {
-	conf := cb.GetConf()
+func (vc *ViperConf) GetSizeInBytes(key string) (uint, error) {
+	conf := vc.GetConf()
 	if conf == nil {
-		return 0, cb.Error
+		return 0, vc.Error
 	}
 	return conf.GetSizeInBytes(key), nil
 }
 
-func parseConf(c *FileConf, name, confType string, changeFunc func(*ViperConf), onRemoveFunc func(*ViperConf)) (*viper.Viper, error) {
+// GetSizeInBytes returns the size of the value associated with the given key
+// in bytes.
+func (vc *ViperConf) AllKeys() []string {
+	conf := vc.GetConf()
+	if conf == nil {
+		return []string{}
+	}
+	return conf.AllKeys()
+}
+
+func parseConf(c *FileConf, name, confType string, changeFunc ifacer.ChangeFunc, onRemoveFunc ifacer.ChangeFunc) (*viper.Viper, error) {
 	x := viper.New()
 	x.SetConfigName(name)
 	x.SetConfigType(confType)
@@ -366,7 +393,11 @@ func confRemovePool(key string, c *FileConf) {
 	}
 }
 
-func DefaultOnChangeFunc(v *ViperConf) {
+func DefaultOnChangeFunc(iv ifacer.Configer) {
+	v, ok := iv.(*ViperConf)
+	if !ok {
+		return
+	}
 	if v.Val != nil && v.Conf != nil {
 		v.ValLock.Lock()
 		defer v.ValLock.Unlock()
@@ -390,7 +421,11 @@ func DefaultOnChangeFunc(v *ViperConf) {
 	}()
 }
 
-func DefaultOnRemoveFunc(v *ViperConf) {
+func DefaultOnRemoveFunc(iv ifacer.Configer) {
+	v, ok := iv.(*ViperConf)
+	if !ok {
+		return
+	}
 	if v.Conf != nil {
 		v.ConfLock.Lock()
 		defer v.ConfLock.Unlock()
