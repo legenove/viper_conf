@@ -91,7 +91,8 @@ type ViperConf struct {
 	Type         string            // 文件类型
 	HasVal       bool              // 是否有值
 	Val          interface{}       // 配置的值
-	OnChange     chan struct{}     // 变更通知
+	onChange     chan struct{}     // 变更通知
+	onRemove     chan struct{}     // 变更通知
 	onChangeFunc ifacer.ChangeFunc // 改变 func
 	onRemoveFunc ifacer.ChangeFunc // 删除 func
 	readingViper bool              // 是否正在读配置
@@ -102,7 +103,8 @@ type ViperConf struct {
 
 func NewViperConfig(fileName string) *ViperConf {
 	return &ViperConf{
-		OnChange: make(chan struct{}, 8),
+		onChange: make(chan struct{}, 8),
+		onRemove: make(chan struct{}, 8),
 		FileName: fileName,
 	}
 }
@@ -359,7 +361,11 @@ func (vc *ViperConf) AllKeys() []string {
 }
 
 func (vc *ViperConf) OnChangeChan() <-chan struct{} {
-	return vc.OnChange
+	return vc.onChange
+}
+
+func (vc *ViperConf) OnRemoveChan() <-chan struct{} {
+	return vc.onRemove
 }
 
 func parseConf(c *FileConf, name, confType string) (*viper.Viper, error) {
@@ -418,9 +424,9 @@ func DefaultOnChangeFunc(iv ifacer.Configer) {
 	}
 	go func() {
 		// 防止无人使用 onchange channel
-		if len(v.OnChange) == 0 {
+		if len(v.onChange) == 0 {
 			select {
-			case v.OnChange <- struct{}{}:
+			case v.onChange <- struct{}{}:
 			case <-time.After(time.Millisecond):
 			}
 		}
@@ -440,6 +446,15 @@ func DefaultOnRemoveFunc(iv ifacer.Configer) {
 		}
 		v.HasViper = false
 	}
+	go func() {
+		// 防止无人使用 onRemove channel
+		if len(v.onRemove) == 0 {
+			select {
+			case v.onRemove <- struct{}{}:
+			case <-time.After(time.Millisecond):
+			}
+		}
+	}()
 }
 
 func getFileName(name, confType string) string {

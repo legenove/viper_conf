@@ -67,7 +67,7 @@ func TestNewConf_FileChange(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	assert.Equal(t, "bcd", s)
+	assert.Equal(t, "abc", s)
 
 }
 
