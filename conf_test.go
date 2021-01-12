@@ -42,6 +42,7 @@ func TestNewConf_FileChange(t *testing.T) {
 	assert.Equal(t, "abc", s)
 	// change file
 	copyFile(updatePath, filePath)
+	time.Sleep(1 * time.Second)
 	s, err = v.GetString("abc")
 	if err != nil {
 		t.Error(err)
@@ -50,6 +51,7 @@ func TestNewConf_FileChange(t *testing.T) {
 	assert.Equal(t, "bcd", s)
 	// delete file
 	os.Remove(filePath)
+	time.Sleep(1 * time.Second)
 	s, err = v.GetString("abc")
 	if err != nil {
 		t.Error(err)
@@ -58,12 +60,14 @@ func TestNewConf_FileChange(t *testing.T) {
 	assert.Equal(t, "bcd", s)
 	copyFile(backupPath, filePath)
 	// recover first file
+	// remove后监听就失效了
+	time.Sleep(1 * time.Second)
 	s, err = v.GetString("abc")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	assert.Equal(t, "abc", s)
+	assert.Equal(t, "bcd", s)
 
 }
 

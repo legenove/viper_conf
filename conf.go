@@ -69,7 +69,7 @@ func (c *FileConf) Instance(fileName, _type string, val interface{}, opts ...ifa
 		}
 		opt(v)
 	}
-	x, err := parseConf(c, v.GetName(), v.GetConfType(), v.OnChangeFunc, v.OnRemoveFunc)
+	x, err := parseConf(c, v.GetName(), v.GetConfType())
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +92,8 @@ type ViperConf struct {
 	HasVal       bool              // 是否有值
 	Val          interface{}       // 配置的值
 	OnChange     chan struct{}     // 变更通知
-	OnChangeFunc ifacer.ChangeFunc // 改变 func
-	OnRemoveFunc ifacer.ChangeFunc // 删除 func
+	onChangeFunc ifacer.ChangeFunc // 改变 func
+	onRemoveFunc ifacer.ChangeFunc // 删除 func
 	readingViper bool              // 是否正在读配置
 	HasViper     bool              // 是否有配置
 	Conf         *viper.Viper      // 配置对象
@@ -102,11 +102,23 @@ type ViperConf struct {
 
 func NewViperConfig(fileName string) *ViperConf {
 	return &ViperConf{
-		OnChange:     make(chan struct{}, 8),
-		FileName:     fileName,
-		OnChangeFunc: DefaultOnChangeFunc,
-		OnRemoveFunc: DefaultOnRemoveFunc,
+		OnChange: make(chan struct{}, 8),
+		FileName: fileName,
 	}
+}
+
+func (vc *ViperConf) OnChangeFunc(iv ifacer.Configer) {
+	if vc.onChangeFunc != nil {
+		vc.onChangeFunc(iv)
+	}
+	DefaultOnChangeFunc(iv)
+}
+
+func (vc *ViperConf) OnRemoveFunc(iv ifacer.Configer) {
+	if vc.onRemoveFunc != nil {
+		vc.onRemoveFunc(iv)
+	}
+	DefaultOnRemoveFunc(iv)
 }
 
 func (vc *ViperConf) GetName() string {
@@ -140,11 +152,11 @@ func (vc *ViperConf) SetValue(val interface{}) *ViperConf {
 }
 
 func (vc *ViperConf) SetOnChangeFunc(onChangeFunc ifacer.ChangeFunc) {
-	vc.OnChangeFunc = onChangeFunc
+	vc.onChangeFunc = onChangeFunc
 }
 
 func (vc *ViperConf) SetOnRemoveFunc(onRemoveFunc ifacer.ChangeFunc) {
-	vc.OnRemoveFunc = onRemoveFunc
+	vc.onRemoveFunc = onRemoveFunc
 }
 
 func (vc *ViperConf) preseConf() {
@@ -154,7 +166,7 @@ func (vc *ViperConf) preseConf() {
 		if vc.HasViper {
 			return
 		}
-		x, err := parseConf(vc.BaseConf, vc.GetName(), vc.GetConfType(), vc.OnChangeFunc, vc.OnRemoveFunc)
+		x, err := parseConf(vc.BaseConf, vc.GetName(), vc.GetConfType())
 		if err != nil {
 			vc.Error = err
 			return
@@ -185,7 +197,7 @@ func (vc *ViperConf) GetConf() *viper.Viper {
 	if !vc.HasViper {
 		vc.preseConf()
 		// 从新加载配置
-		if vc.HasViper && vc.OnChangeFunc != nil {
+		if vc.HasViper {
 			vc.LoadLock.Lock()
 			if vc.HasViper {
 				vc.OnChangeFunc(vc)
@@ -201,7 +213,7 @@ func (vc *ViperConf) GetValue() interface{} {
 		// 没有配置时，要加载配置
 		vc.GetConf()
 	}
-	if vc.Val != nil && !vc.HasVal && vc.OnChangeFunc != nil {
+	if vc.Val != nil && !vc.HasVal {
 		vc.LoadLock.Lock()
 		if vc.Val != nil && !vc.HasVal {
 			vc.OnChangeFunc(vc)
@@ -346,7 +358,11 @@ func (vc *ViperConf) AllKeys() []string {
 	return conf.AllKeys()
 }
 
-func parseConf(c *FileConf, name, confType string, changeFunc ifacer.ChangeFunc, onRemoveFunc ifacer.ChangeFunc) (*viper.Viper, error) {
+func (vc *ViperConf) OnChangeChan() <-chan struct{} {
+	return vc.OnChange
+}
+
+func parseConf(c *FileConf, name, confType string) (*viper.Viper, error) {
 	x := viper.New()
 	x.SetConfigName(name)
 	x.SetConfigType(confType)
@@ -356,12 +372,6 @@ func parseConf(c *FileConf, name, confType string, changeFunc ifacer.ChangeFunc,
 	}
 	if err := x.ReadInConfig(); err != nil {
 		return nil, err
-	}
-	if changeFunc == nil {
-		changeFunc = DefaultOnChangeFunc
-	}
-	if onRemoveFunc != nil {
-		onRemoveFunc = DefaultOnRemoveFunc
 	}
 	x.WatchConfig()
 	x.OnConfigChange(func(e fsnotify.Event) {
@@ -378,7 +388,7 @@ func confChangePool(key string, c *FileConf) {
 	if !ok {
 		return
 	}
-	if v.OnChangeFunc != nil {
+	if v.onChangeFunc != nil {
 		v.OnChangeFunc(v)
 	}
 }
@@ -388,7 +398,7 @@ func confRemovePool(key string, c *FileConf) {
 	if !ok {
 		return
 	}
-	if v.OnRemoveFunc != nil {
+	if v.onRemoveFunc != nil {
 		v.OnRemoveFunc(v)
 	}
 }
