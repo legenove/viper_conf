@@ -388,9 +388,7 @@ func confChangePool(key string, c *FileConf) {
 	if !ok {
 		return
 	}
-	if v.onChangeFunc != nil {
-		v.OnChangeFunc(v)
-	}
+	v.OnChangeFunc(v)
 }
 
 func confRemovePool(key string, c *FileConf) {
@@ -398,9 +396,7 @@ func confRemovePool(key string, c *FileConf) {
 	if !ok {
 		return
 	}
-	if v.onRemoveFunc != nil {
-		v.OnRemoveFunc(v)
-	}
+	v.OnRemoveFunc(v)
 }
 
 func DefaultOnChangeFunc(iv ifacer.Configer) {
