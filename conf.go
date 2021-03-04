@@ -78,7 +78,7 @@ func (c *FileConf) Instance(fileName, _type string, val interface{}, opts ...ifa
 	v.Conf = x
 	v.setBaseConf(c)
 	c.Val[fileName] = v
-	v.onChange <- struct{}{}
+	v.OnChangeFunc(v)
 	return v, nil
 }
 
